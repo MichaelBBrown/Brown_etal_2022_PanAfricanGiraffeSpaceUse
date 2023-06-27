@@ -16,7 +16,7 @@ library(geojsonio)
 
 #Set Working Directory
 #Change working Directory
-setwd('C:/Users/mbbro/Documents/GitHub/TheContinental_Giraffe/Data')
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 #Load Data
 #Note: These data have already been filtered using the following criteria
@@ -24,9 +24,7 @@ setwd('C:/Users/mbbro/Documents/GitHub/TheContinental_Giraffe/Data')
 ##Stop the day before the unit went stationary or failed
 ##Stop on January 1, 2022
 ##All times are local time at the location the unit was deployed
-data =read.csv(file="data_continental.csv", head=TRUE, sep=",") 
-data =read.csv(file="ndvi_update.csv", head=TRUE, sep=",") 
-
+data =read.csv(file="data_sample.csv", head=TRUE, sep=",") 
 
 #Format datetime to class POSIxCT
 data$dt <- as.POSIXct(strptime(data$dt, "%Y-%m-%d %H:%M:%S", tz = "UTC")) #Turn date to class POSIXct
@@ -34,19 +32,10 @@ data$dt <- as.POSIXct(strptime(data$dt, "%Y-%m-%d %H:%M:%S", tz = "UTC")) #Turn 
 #Final filtering and formatting of master dataframe
 data1= data #rename to maintain integrity
 trackdata = data1 %>%
-  #dplyr::filter(Park_location == "Northwest")%>%
-  #dplyr::filter(Country == "Tanzania")%>%
-  dplyr::filter(Operation == "Northwest_2021")%>%
-  #dplyr::filter(Operation %in% c("Bots_2012","Etosha_2021","EtoshaHeights_2021","Northwest_2021","Phinda_2021"))%>%
   dplyr::select(ID,Name,LATITUDE,LONGITUDE,dt,Operation,BATTERY,Park_location,Country,species,subspecies,HACCURACY)#%>%
 data$BATTERY = as.numeric(data$BATTERY)
 data=droplevels(data)
-dim(data)
-dim(trackdata)
-
 trackdata=droplevels(trackdata)
-
-str(trackdata)
 trackdata$Date <- as.Date(trackdata$dt)
 trackdata$Date <- as.factor(trackdata$Date)
 trackdata$index <- seq(1:nrow(trackdata))
@@ -59,7 +48,6 @@ head(datasf)
 #######################################
 # Initialize rgee
 library(rgee)
-#ee_Initialize(email='mbbrown62@gmail.com',drive=TRUE, gcs=TRUE)
 ee_Initialize()
 ee_check()
 
@@ -139,34 +127,17 @@ for(x in unique(datasf$uniq)){
   dataoutput <- rbind(dataoutput, temp)
 }
 end_time <- Sys.time()
-
-head(dataoutput)
 names(dataoutput)[4] <- band
-dataoutput
 dataoutput$NDVI2 = dataoutput$PixelVal/10000
 
 #library(sfheaders)
 #dataoutput.df = sf_to_df(dataoutput)
 dataoutput.df = as.data.frame(dataoutput)
-write.csv(dataoutput.df, file="Northwest_outputdf.csv")# Write A csv
+#write.csv(dataoutput.df, file="NDVI_outputdf.csv")# Write A csv
 dataoutput.df$ID_check = dataoutput.df$ID
 dataoutput.df= dataoutput.df%>%
   dplyr::select(ID_check, PixelVal,geometry,NDVI2)
 ndvi = cbind(trackdata,dataoutput.df)
 
-# Build plot
-library(cowplot)
-library(ggmap)
-library(ggplot2)
-theme_set(theme_cowplot())
-NDVI_plot <- ggplot(ndvi, aes(x=dt, y=NDVI2))+ 
-  geom_point(aes(color=ID))+
-  ylab("NDVI")+
-  xlab("Date")+
-  ggtitle("NDVI over Time")
-#theme(axis.text.y = element_text(angle=90))#+ #NOTE: SILENCE THIS LINE OF CODE if you are looking at multiple animals 
-#theme(text = element_text(size=20))
-NDVI_plot 
-
 #Write the Files to csv
-write.csv(ndvi, file="NDVI_update_Nambia2021.csv")# Write A csv
+write.csv(ndvi, file="NDVI_output.csv")# Write A csv

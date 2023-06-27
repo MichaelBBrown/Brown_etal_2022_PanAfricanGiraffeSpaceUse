@@ -22,13 +22,10 @@ library(ggplot2)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Read in Movement Data
-df1 = read.csv(file="../Data/continental_df5.csv", header = TRUE, sep =",")
+df1 = read.csv(file="../Data/ctmm_summary.csv", header = TRUE, sep =",")
 df=df1
-collar_key = read.csv(file="../Data/ctmm_key2.csv",head=TRUE,sep=",")
 count= length(dplyr::filter(df,df$Variogram_inspection == "bad"))
 #Changing some site names in northern Kenya
-df$Park_location = replace(df$Park_location, df$Park_location =="Biliqo_Bulesa","NorthernKenya")#For replacing characters with other characters
-df$Park_location = replace(df$Park_location, df$Park_location =="Melako","NorthernKenya")#For replacing characters with other characters
 
 #Transforming some of the response variables for gaussian modeling
 df$log_akde_95 = log(df$akde_95_ML) #log transformation for the 95% akde 
@@ -38,21 +35,16 @@ df$var_log_area_95 = 1/df$akde_95_DOF_area #Proper variance for subsequent metaf
 df$var_log_area_50 = 1/df$akde_50_DOF_area #Proper variance for subsequent metafor analyses
 df$var_log_speed = (1/4)/df$DOF_speed
 
-# df$var_log_area_95 = log(df$df$akde_95_DOF_area)^2/df$akde_50_DOF_area #Proper variance for subsequent metafor analyses
-# df$var_log_area_50 = log(df$akde_50_ML)^2/df$akde_50_DOF_area #Proper variance for subsequent metafor analyses
-# df$var_log_speed = log(df$speed_ml)^2/df$DOF_speed #Proper variance for subsequent metafor analyses
-
 #Some Simple filtering to exclude giraffe with bad models
 df = df %>%
   dplyr::filter(!Duration < 152)%>% # If there are fewer than 500 fixes...I didn't run many ctmm models on individuals with fewer than 500 fixes, so there shouldn't be too many of these
-  #dplyr::filter(!Number_of_fixes < 500)%>% # If there are fewer than 500 fixes...I didn't run many ctmm models on individuals with fewer than 500 fixes, so there shouldn't be too many of these
   dplyr::filter(!DOF_area < 4)%>% #If DOF area is less than 4
   dplyr::filter(!duplicate == "yes")%>% #If DOF area is less than 4
-  #dplyr::filter(Country=="Niger")%>%
-  dplyr::filter(!akde_95_ML > 20000)%>% #Just to get rid of that one weird one up in Niger
+  dplyr::filter(!akde_95_ML > 20000)%>% #
   dplyr::filter(!Variogram_inspection =="bad")%>% #If variograms didn't converge on home range behaviour as determined by subjective visual inspection
   drop_na(model) #Get rid of all collars without sufficient model data
 
+#Basic Summaries of models
 species_summary = df %>%
   group_by(species)%>%
   dplyr::summarise(total=n())
@@ -68,79 +60,18 @@ sex_summary = df %>%
   dplyr::summarise(total=n())
 sex_summary
 
-head(df)
-
-
-#Generating a quick plot to visualize the HR size by Species
-ggplot(data=df,aes(x=akde_95_ML, y= ID))+
-  geom_point(aes(color= Park_location))+
-  geom_errorbar(aes(xmin=akde_95_lcl,xmax=akde_95_ucl,color=Park_location))+
-  xlab("AKDE 95% Size")+
-  ylab(" Collar ID")+
-  facet_wrap(~species, scale = "free")+
-  xlim(0,600) #excluding point estimates above 600km2 in the graph just so we can visually inspect the smaller sizes
-  #theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
-  ggtitle("AKDE_95 Size")
-  
-  
 library(ggpmisc)
-#Generating a quick plot to visualize the HR size by Species
-  ggplot(data=df,aes(x=ndvi_mean, y= log_akde_95))+
-    geom_point(aes(color= species))+
-        #geom_errorbar(aes(ymin=akde_95_lcl,ymax=akde_95_ucl,color=Park_location))+
-    xlab("Mean NDVI")+
-    ylab("AKDE 95% Size")+
-    stat_smooth(aes(fill = species, color = species), method = "lm", formula = y ~ x) +
-    #stat_regline_equation(aes(label =  paste(..eq.label.., ..adj.rr.label.., sep = "~~~~"))) +
-    #geom_smooth(method = "lm", se=FALSE, color="black", formula = y ~ x) +
-    facet_wrap(~species, scale = "free")
-    #xlim(0,600) #excluding point estimates above 600km2 in the graph just so we can visually inspect the smaller sizes
-  #theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
-  ggtitle("AKDE_95 Size and NDVI by Species")
-  
-df_trial = df %>%
-  dplyr::filter(species =="tippelskirchi")
-test = lm(df_trial$log_akde_95 ~ df_trial$ndvi_mean)  
-plot(df_trial$log_akde_95 ~ df_trial$ndvi_mean)    
-abline(test)
-summary(test)
-    
-  ### copy BCG vaccine data into 'dat'
-  dat <- dat.bcg
-  
-  ### calculate log risk ratios and corresponding sampling variances
-  dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat,
-                slab=paste(author, ", ", year, sep=""))
-  
-  ### fit random-effects model
-  res <- rma(yi, vi, data=dat)
-  
-  # \dontrun{
-  ### generate report
- # reporter(res)
-  #> 
-  #> Directory for generating the report is: /tmp/RtmpAWjSbW
-  #> Copying references.bib and apa.csl to report directory ...
-  #> Saving model object to report_res.rdata ...
-  #> Creating report_res.rmd file ...
-  #> Rendering report_res.rmd file ...
-  #> Generated /tmp/RtmpAWjSbW/report_res.html ...
-  #> Opening report ...
-  # }
-  
-  
+
 #########################################
 #Looking at some quick forest plots per species to compare HR estimates
 df = df %>%
   dplyr::filter(!is.na(log_akde_95))%>%
-  #dplyr::filter(!is.na(temp_mean))%>%
   dplyr::filter(!is.na(ProtectedArea))%>%
   dplyr::filter(!is.na(ndvi_mean))%>%
   dplyr::filter(!is.na(ndvi_sd))%>%
   dplyr::filter(!is.na(habitat))%>%
   dplyr::filter(!is.na(hfp2009_mean))%>%
   dplyr::filter(!is.na(human_density_mean))
-
   
 #Scale the covariates  
 df$human_density_mean_scale = scale(df$human_density_mean)
@@ -181,10 +112,6 @@ print(t.score)
 summary$ucl = summary$mean + (t.score * summary$se)
 summary$lcl = summary$mean + (t.score - summary$se)
 
-#summary
-#ci_model = lm(df$akde_95_ML ~ 1)
-#confint(ci_model, level= 0.95)
-
 #Summarise by Species
 summary_species= df %>%
   dplyr::group_by(species)%>%
@@ -214,6 +141,7 @@ library(metafor)
 res2_akde <- rma(yi=log_akde_95, vi=var_log_area_95,mods = ~species, data=df)
 res2_akde
 forest(res2_akde)
+
 #predicted effects 
 df_species = as.data.frame(df %>% dplyr::select(species))
 mean_akde_species = cbind(df_species,as.data.frame(predict(res2_akde,transf=exp,digits=2)))%>%
@@ -223,7 +151,6 @@ mean_akde_species$species = replace(mean_akde_species$species, mean_akde_species
 mean_akde_species$species = replace(mean_akde_species$species, mean_akde_species$species =="giraffa","G. giraffa")#For replacing characters with other characters
 mean_akde_species$species = replace(mean_akde_species$species, mean_akde_species$species =="reticulata","G. reticulata")#For replacing characters with other characters
 mean_akde_species$species = replace(mean_akde_species$species, mean_akde_species$species =="tippelskirchi","G. tippelskirchi")#For replacing characters with other characters
-
 speed_summary$Effect = replace(speed_summary$Effect, speed_summary$Effect =="woody_sd_scale","Woody Biomass (SD)")#For replacing characters with other characters
 
 #Generating a quick plot to visualize the HR size by site
@@ -850,6 +777,6 @@ X <- model.matrix(meta_speed13.2)
 P <- W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
 100 * sum(meta_speed13.2$sigma2) / (sum(meta_speed13.2$sigma2) + (meta_speed13.2$k-meta_speed13.2$p)/sum(diag(P)))
 
-#How much variacen is du to between cluster heterogeneity
+#How much variacen is due to between cluster heterogeneity
 100 * meta_speed13.2$sigma2 / (sum(meta_speed13.2$sigma2) + (meta_speed13.2$k-meta_speed13.2$p)/sum(diag(P)))
 
