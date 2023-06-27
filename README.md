@@ -15,4 +15,4 @@ daily movement. The mean 95% AKDE was 356.4 km2 and the mean daily movement was 
 browser and highlight the potential impacts of rapidly changing landscapes on animal space-use patterns.
 
 # Attention
-This code is subject to change
+Final code will be published to this site after the the manuscript embargo on the afternoon of June 28, 2023 EST. This code is subject to change
