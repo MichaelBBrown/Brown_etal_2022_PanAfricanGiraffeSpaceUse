@@ -1,4 +1,4 @@
-##THE CONTINENTAL
+##Pan African Giraffe Movement
 ##Mixed Effects Models in the Meta Analysis Framework
 #Author: Michael Butler Brown
 #Author Affiliations: Smithsonian Conservation Biology Institute and Giraffe Conservation Foundation
@@ -54,11 +54,6 @@ movement_summary = df %>%
   group_by(model)%>%
   dplyr::summarise(total=n())
 movement_summary
-
-sex_summary = df %>%
-  group_by(sex)%>%
-  dplyr::summarise(total=n())
-sex_summary
 
 library(ggpmisc)
 
@@ -206,7 +201,6 @@ mean_speed_species$species = replace(mean_speed_species$species, mean_speed_spec
 mean_speed_species$species = replace(mean_speed_species$species, mean_speed_species$species =="reticulata","G. reticulata")#For replacing characters with other characters
 mean_speed_species$species = replace(mean_speed_species$species, mean_speed_species$species =="tippelskirchi","G. tippelskirchi")#For replacing characters with other characters
 
-
 #Calculating mean AKDE from raw ML point estimates...for comparison purposes
 mean(df$speed_ml) #Looking at mean value 
 summary_speed= df %>%
@@ -339,33 +333,6 @@ meta13 = rma.mv(log_akde_95,var_log_area_95, mods = ~
                random= ~1|Park_location,
                method= "REML",
                data=df)
-
-
-trial = rma.mv(log_akde_95,var_log_area_95, mods = ~ 
-                  ndvi_mean_scale +
-                  ndvi_sd_scale + 
-                  ProtectedArea +
-                  woody_mean_scale +
-                  woody_sd_scale +
-                  #habitat +
-                  hfp2009_mean_scale +
-                  hfp2009_sd_scale +
-                  #human_density_mean_scale +
-                  #human_density_sd_scale +
-                  ndvi_mean_scale * woody_mean_scale + 
-                  #ndvi_mean_scale * woody_sd_scale +
-                  #ndvi_sd_scale * woody_mean_scale + 
-                  #ndvi_sd_scale * woody_sd_scale+
-                  #ndvi_mean_scale * habitat +
-                  ndvi_mean_scale * hfp2009_mean_scale +
-                  #ndvi_sd_scale * habitat +
-                  #ndvi_sd_scale * hfp2009_mean_scale +
-                  #ndvi_sd_scale * ProtectedArea + 
-                  ndvi_mean_scale * ProtectedArea, 
-                #random= ~1|Park_location,
-                method= "REML",
-                data=df)
-
 
 meta14 = rma.mv(log_akde_95,var_log_area_95, mods = ~ 
                  ndvi_mean_scale +
